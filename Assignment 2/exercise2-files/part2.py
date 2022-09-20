@@ -11,14 +11,6 @@ class SQLQueries:
         GROUP BY user_id
         ORDER BY count DESC;
         """
-        # self.task2 = [f"""
-        # SELECT {x[0]}(count) AS {x[1]}_activities
-        # FROM ActivityCount;
-        # """ for x in [('AVG', 'average'), ('MIN', 'min'), ('MAX', 'max')]]
-        # self.task2 = """
-        # SELECT AVG(count) AS average_activities
-        # FROM ActivityCount;
-        # """
         
         self.task2 = """SELECT AVG(count) AS average_activities
         FROM ActivityCount;"""
