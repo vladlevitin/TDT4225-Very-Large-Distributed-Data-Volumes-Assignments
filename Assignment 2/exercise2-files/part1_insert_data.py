@@ -52,10 +52,6 @@ def insert_data():
         
     root = 'dataset/Data'
     
-    
-    # use to write to db in multiple times
-    # users_df = users_df[users_df['id'].astype(int) >= 100]
-    
     for user_id in list(users_df['id']):
         
         print("Processing user: " + user_id)
