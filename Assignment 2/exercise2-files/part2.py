@@ -1,6 +1,7 @@
 class SQLQueries:
     def __init__(self) -> None:
         
+        # How many users, activities and trackpoints are there in the dataset (after it is inserted into the database).
         self.task1 = {table_name: f'SELECT COUNT(*) FROM {table_name};' for table_name in ['User', 'Activity', 'TrackPoint']}
         
         self.task2_init = """
@@ -11,14 +12,18 @@ class SQLQueries:
         GROUP BY user_id
         ORDER BY count DESC;
         """
-        
+        # Find the average number of activities per user.       
         self.task2 = """SELECT AVG(count) AS average_activities
         FROM ActivityCount;"""
-
+        
+        # Find the top 20 users with the highest number of activities
         self.task3 = """ SELECT user_id, count
         FROM ActivityCount
         LIMIT 20;
         """
+        
+        # Find all the users who have taken a taxi
+        self.task4 = """SELECT DISTINCT user_id from Activity WHERE transportation_mode = 'taxi';"""
         
 from haversine.haversine import haversine_vector
 from DbConnector import DbConnector
@@ -53,10 +58,10 @@ def main():
     all_queries = SQLQueries()
     
     try:
-            print("\nTask 2.1:\n")
-            for table_name, query in all_queries.task1.items():
-                print(f"Table: {table_name}\n")
-                program.fetch_data(query, table_name)
+            # print("\nTask 2.1:\n")
+            # for table_name, query in all_queries.task1.items():
+            #     print(f"Table: {table_name}\n")
+            #     program.fetch_data(query, table_name)
                 
 
             # print("\nTask 2.2:")
@@ -68,6 +73,11 @@ def main():
             # print("\nTask 2.3:")
             # print("Top 20 users with most activities:\n")
             # program.fetch_data(all_queries.task3)
+            
+            print("\nTask 2.4:")
+            print("Users who have taken a taxi:\n")
+            program.fetch_data(all_queries.task4)
+            
                 
                 
     except Exception as e:
