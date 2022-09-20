@@ -3,7 +3,7 @@ from DbConnector import DbConnector
 from tabulate import tabulate
 
 import pandas as pd
-import haversine
+from haversine import haversine
 import part1_create_tables
 import part1_insert_data
 import numpy as np
@@ -54,6 +54,16 @@ class SQLQueries:
                                 SUM(TIMESTAMPDIFF(HOUR, start_date_time, end_date_time)) as hours 
                          FROM Activity GROUP BY start_year ORDER BY hours DESC LIMIT 1;"""
 
+        # Total distance (in km) walked in 2008, by user id=112
+        # where walking and user id = 112
+        # Use havershine
+        # Alot of missing transportation mode values, ignoring them
+        # Sum haversine distance for each activity!
+        self.task7 = """SELECT a.user_id, t.date_time, a.id, t.lat, t.lon FROM Activity a
+                        INNER JOIN TrackPoint t ON t.activity_id = a.id
+                                WHERE EXTRACT(YEAR FROM start_date_time) = '2008' AND user_id = 112 AND transportation_mode = 'walk'
+                                """
+
 class Program:
         def __init__(self):
             self.connection = DbConnector()
@@ -68,6 +78,36 @@ class Program:
             if print_results:
                 print(tabulate(rows, headers=self.cursor.column_names), end="\n"*2)
             return rows
+
+        def fetch_data_with_columns(self, query, print_results=True):
+
+            self.cursor.execute(query)
+            rows = self.cursor.fetchall()
+
+            if print_results:
+                print(tabulate(rows, headers=self.cursor.column_names), end="\n" * 2)
+            return rows, self.cursor.column_names
+
+        # Calculates the total distance traveled from multiple lat long points
+        def odometer(self, df):
+            distance = 0
+
+            # Iterate through activity IDs
+            for idx in df.id.unique():
+                activity_df = df[df.id == idx].copy()
+
+                #Insert end coordinates
+                activity_df['lat_end'] = activity_df['lat'].shift(-1)
+                activity_df['lon_end'] = activity_df['lon'].shift(-1)
+
+                # Remove last record (has no end)
+                activity_df.drop(activity_df.tail(1).index, inplace=True)
+
+                # Calculate distance and sum up for each row
+                for _, row in activity_df.iterrows():
+                    distance += haversine((row.lat, row.lon), (row.lat_end, row.lon_end), unit="km")
+
+            return distance
 
     
 
@@ -105,10 +145,16 @@ def main():
             #print("The year with the most activities:\n")
             #program.fetch_data(all_queries.task6a)
 
-            print("\nTask 2.6b:")
-            print("The year with the most recorded hours:\n")
-            program.fetch_data(all_queries.task6b)
-                
+            #print("\nTask 2.6b:")
+            #print("The year with the most recorded hours:\n")
+            #program.fetch_data(all_queries.task6b)
+
+            print("\nTask 2.7:")
+            print("Total distance walked in 2008 by user with id=112:\n")
+            track_points, columns = program.fetch_data_with_columns(all_queries.task7, print_results=False)
+            track_points = pd.DataFrame(track_points, columns=columns)
+            print(program.odometer(track_points))
+
     except Exception as e:
         print("ERROR: Failed to use database:", e)
         
