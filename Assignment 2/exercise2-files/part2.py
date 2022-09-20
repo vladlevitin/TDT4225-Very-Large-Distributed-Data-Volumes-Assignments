@@ -1,0 +1,92 @@
+class SQLQueries:
+    def __init__(self) -> None:
+        
+        self.task1 = {table_name: f'SELECT COUNT(*) FROM {table_name};' for table_name in ['User', 'Activity', 'TrackPoint']}
+        
+        self.task2_init = """
+        CREATE TEMPORARY TABLE ActivityCount
+        
+        SELECT user_id, COUNT(*) AS count 
+        FROM Activity
+        GROUP BY user_id
+        ORDER BY count DESC;
+        """
+        # self.task2 = [f"""
+        # SELECT {x[0]}(count) AS {x[1]}_activities
+        # FROM ActivityCount;
+        # """ for x in [('AVG', 'average'), ('MIN', 'min'), ('MAX', 'max')]]
+        # self.task2 = """
+        # SELECT AVG(count) AS average_activities
+        # FROM ActivityCount;
+        # """
+        
+        self.task2 = """SELECT AVG(count) AS average_activities
+        FROM ActivityCount;"""
+
+        self.task3 = """ SELECT user_id, count
+        FROM ActivityCount
+        LIMIT 20;
+        """
+        
+from haversine.haversine import haversine_vector
+from DbConnector import DbConnector
+from tabulate import tabulate
+
+import pandas as pd
+import haversine
+import part1_create_tables
+import part1_insert_data
+import numpy as np
+
+class Program:
+        def __init__(self):
+            self.connection = DbConnector()
+            self.db_connection = self.connection.db_connection
+            self.cursor = self.connection.cursor
+        
+        def fetch_data(self, query, print_results=True):
+            
+            self.cursor.execute(query)
+            rows = self.cursor.fetchall()
+            
+            if print_results:
+                print(tabulate(rows, headers=self.cursor.column_names), end="\n"*2)
+            return rows
+
+    
+
+def main():
+    
+    program = Program()
+    all_queries = SQLQueries()
+    
+    try:
+            print("\nTask 2.1:\n")
+            for table_name, query in all_queries.task1.items():
+                print(f"Table: {table_name}\n")
+                program.fetch_data(query, table_name)
+                
+
+            # print("\nTask 2.2:")
+            # print("Average number of activties per user:\n")
+            # program.cursor.execute(all_queries.task2_init)
+            # program.fetch_data(all_queries.task2)
+            
+    
+            # print("\nTask 2.3:")
+            # print("Top 20 users with most activities:\n")
+            # program.fetch_data(all_queries.task3)
+                
+                
+    except Exception as e:
+        print("ERROR: Failed to use database:", e)
+        
+    finally:
+        if program:
+            program.connection.close_connection()
+    
+        
+    
+
+if __name__ == "__main__":
+    main()
