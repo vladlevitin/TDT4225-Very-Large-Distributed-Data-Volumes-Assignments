@@ -1,3 +1,15 @@
+from haversine.haversine import haversine_vector
+from DbConnector import DbConnector
+from tabulate import tabulate
+
+import pandas as pd
+import haversine
+import part1_create_tables
+import part1_insert_data
+import numpy as np
+
+
+
 class SQLQueries:
     def __init__(self) -> None:
         
@@ -30,15 +42,7 @@ class SQLQueries:
         from Activity WHERE transportation_mode IS NOT NULL 
         GROUP BY transportation_mode;"""
         
-from haversine.haversine import haversine_vector
-from DbConnector import DbConnector
-from tabulate import tabulate
 
-import pandas as pd
-import haversine
-import part1_create_tables
-import part1_insert_data
-import numpy as np
 
 class Program:
         def __init__(self):
