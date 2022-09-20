@@ -25,6 +25,11 @@ class SQLQueries:
         # Find all the users who have taken a taxi
         self.task4 = """SELECT DISTINCT user_id from Activity WHERE transportation_mode = 'taxi';"""
         
+        #Find all types of transportation modes and count how many activities that are tagged with these transportation mode labels. Do not count the rows where the mode is null
+        self.task5 = """SELECT transportation_mode, COUNT(*) AS count 
+        from Activity WHERE transportation_mode IS NOT NULL 
+        GROUP BY transportation_mode;"""
+        
 from haversine.haversine import haversine_vector
 from DbConnector import DbConnector
 from tabulate import tabulate
@@ -74,9 +79,13 @@ def main():
             # print("Top 20 users with most activities:\n")
             # program.fetch_data(all_queries.task3)
             
-            print("\nTask 2.4:")
-            print("Users who have taken a taxi:\n")
-            program.fetch_data(all_queries.task4)
+            # print("\nTask 2.4:")
+            # print("Users who have taken a taxi:\n")
+            # program.fetch_data(all_queries.task4)
+            
+            print("\nTask 2.5:")
+            print("Types of transportation modes and their activities count:\n")
+            program.fetch_data(all_queries.task5)
             
                 
                 
