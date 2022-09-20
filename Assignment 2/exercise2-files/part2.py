@@ -41,8 +41,18 @@ class SQLQueries:
         self.task5 = """SELECT transportation_mode, COUNT(*) AS count 
         from Activity WHERE transportation_mode IS NOT NULL 
         GROUP BY transportation_mode;"""
-        
 
+        # Find the year with the most activities. Ordering by the activity count and limiting query result to the first element: the year with the most activities.
+        # Perhaps check for duplicates in start time for same user?
+        self.task6a = """SELECT EXTRACT(YEAR FROM start_date_time) AS start_year, 
+                                COUNT(EXTRACT(YEAR FROM start_date_time)) AS COUNT 
+                         FROM Activity GROUP BY start_year ORDER BY COUNT DESC LIMIT 1;"""
+
+        # Is 2008 the year with the most recorded hours too?
+        # How to find time difference between two dates
+        self.task6b = """SELECT EXTRACT(YEAR FROM start_date_time) AS start_year, 
+                                SUM(TIMESTAMPDIFF(HOUR, start_date_time, end_date_time)) as hours 
+                         FROM Activity GROUP BY start_year ORDER BY hours DESC LIMIT 1;"""
 
 class Program:
         def __init__(self):
@@ -87,11 +97,17 @@ def main():
             # print("Users who have taken a taxi:\n")
             # program.fetch_data(all_queries.task4)
             
-            print("\nTask 2.5:")
-            print("Types of transportation modes and their activities count:\n")
-            program.fetch_data(all_queries.task5)
+            #print("\nTask 2.5:")
+            #print("Types of transportation modes and their activities count:\n")
+            #program.fetch_data(all_queries.task5)
             
-                
+            #print("\nTask 2.6a:")
+            #print("The year with the most activities:\n")
+            #program.fetch_data(all_queries.task6a)
+
+            print("\nTask 2.6b:")
+            print("The year with the most recorded hours:\n")
+            program.fetch_data(all_queries.task6b)
                 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
