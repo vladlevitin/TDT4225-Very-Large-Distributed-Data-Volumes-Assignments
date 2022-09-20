@@ -99,9 +99,6 @@ def main():
     finally:
         if program:
             program.connection.close_connection()
-    
-        
-    
 
 if __name__ == "__main__":
     main()
