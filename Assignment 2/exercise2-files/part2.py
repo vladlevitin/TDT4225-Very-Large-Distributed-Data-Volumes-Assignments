@@ -7,6 +7,7 @@ from haversine import haversine
 import part1_create_tables
 import part1_insert_data
 import numpy as np
+import time
 
 
 
@@ -55,14 +56,18 @@ class SQLQueries:
                          FROM Activity GROUP BY start_year ORDER BY hours DESC LIMIT 1;"""
 
         # Total distance (in km) walked in 2008, by user id=112
-        # where walking and user id = 112
-        # Use havershine
-        # Alot of missing transportation mode values, ignoring them
-        # Sum haversine distance for each activity!
         self.task7 = """SELECT a.user_id, t.date_time, a.id, t.lat, t.lon FROM Activity a
                         INNER JOIN TrackPoint t ON t.activity_id = a.id
                                 WHERE EXTRACT(YEAR FROM start_date_time) = '2008' AND user_id = 112 AND transportation_mode = 'walk'
                                 """
+
+        # Top 20 users that has gained the most altitude
+        # Altitude cannot be higher than Mount Everest 8848 moh
+        # Probably a lot of dirty data due to flying planes? Can speed be checked somehow?
+        self.task8 = """SELECT a.user_id, a.id, t.altitude, t.date_time
+        FROM Activity a 
+        INNER JOIN TrackPoint t ON t.activity_id = a.id HAVING t.altitude > 0 AND t.altitude < 8848 LIMIT 3500000;"""
+
 
 class Program:
         def __init__(self):
@@ -109,6 +114,35 @@ class Program:
 
             return distance
 
+        # Calculates the total distance traveled from multiple lat long points
+        def altitude_odometer(self, df):
+            user_altitude_dict = {}
+            print("ALT ODOMETER STARTS ROLLING")
+            # TODO Group by activity and then shift and drop etc.. Can this be done?
+            # Iterate through user IDs
+            for user_id in df.user_id.unique():
+                distance = 0    # Reset for every user
+
+                activity_df = df[(df.user_id == user_id)].copy()  # Slice/index the array and copy
+
+                # Iterate through activity IDs
+                for idx in df.id.unique():
+
+                    #Insert end coordinates
+                    activity_df.loc[(df.id == idx), 'altitude_next'] = activity_df.loc[(df.id == idx), 'altitude'].shift(-1)
+
+                    # Remove last record (has no end)
+                    activity_df.drop(activity_df.tail(1).index, inplace=True)
+
+                    # Calculate altitude change on adjacent entries
+                    distance += np.abs(activity_df.loc[(df.id == idx), 'altitude'] - activity_df.loc[(df.id == idx), 'altitude_next']).sum()
+
+
+                user_altitude_dict[user_id] = distance
+                print("User: "+str(user_id))
+                print(user_altitude_dict[user_id])
+            return user_altitude_dict
+
     
 
 def main():
@@ -149,11 +183,17 @@ def main():
             #print("The year with the most recorded hours:\n")
             #program.fetch_data(all_queries.task6b)
 
-            print("\nTask 2.7:")
-            print("Total distance walked in 2008 by user with id=112:\n")
-            track_points, columns = program.fetch_data_with_columns(all_queries.task7, print_results=False)
+            #print("\nTask 2.7:")
+            #print("Total distance walked in 2008 by user with id=112:\n")
+            #track_points, columns = program.fetch_data_with_columns(all_queries.task7, print_results=False)
+            #track_points = pd.DataFrame(track_points, columns=columns)
+            #print(program.odometer(track_points))
+
+            print("\nTask 2.8:")
+            print("Top 20 users who have gained the most altitude:\n")
+            track_points, columns = program.fetch_data_with_columns(all_queries.task8, print_results=False)
             track_points = pd.DataFrame(track_points, columns=columns)
-            print(program.odometer(track_points))
+            (program.altitude_odometer(track_points))
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
