@@ -8,6 +8,8 @@ import part1_create_tables
 import part1_insert_data
 import numpy as np
 import time
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
 
 
@@ -68,6 +70,9 @@ class SQLQueries:
         FROM Activity a 
         INNER JOIN TrackPoint t ON t.activity_id = a.id HAVING t.altitude > 0 AND t.altitude < 8848;"""
 
+        # Find users who have invalid activities, and the number of invalid activities per user
+        self.task9 = """SELECT a.user_id, a.id, t.date_time FROM TrackPoint t
+        INNER JOIN Activity a ON a.id = t.activity_id"""
 
 class Program:
         def __init__(self):
@@ -116,7 +121,6 @@ class Program:
 
         # Calculates the total distance traveled from multiple lat long points
         def altitude_odometer(self, df):
-            user_altitude_dict = {}
             print("Calculating altitude gained")
             altitude_df = pd.DataFrame(columns=['user_id', 'altitude_gained'])
             altitude_df.user_id = df.user_id.unique()
@@ -129,10 +133,34 @@ class Program:
             for user_id in df.user_id.unique():
                 # Groups by the activity id, then calculates the differences in altitude between adjacent rows with diff
                 # Then removes negative values and sums
-                altitude_df.loc[altitude_df.user_id == user_id, 'altitude_gained'] = df[(df.user_id == user_id)].groupby('id')['altitude'].diff().clip(lower=0).sum() * 0.3048
+                altitude_df.loc[altitude_df.user_id == user_id, 'altitude_gained'] = df[(df.user_id == user_id)].groupby('id')['altitude'].diff().clip(lower=0).sum() * meter_in_feet
             return altitude_df
 
-    
+        def invalid_activities(self, df):
+            print("Calculating invalid activities")
+            invalid_df = pd.DataFrame(columns=['user_id', 'invalid_activities'])
+
+            date_points_df = df.copy()
+            invalid_df.user_id = df.user_id.unique()
+
+            # For all trackpoints, find time_diff between adjacent within a activity
+            date_points_df['time_diff'] = df.groupby('id')['date_time'].diff().dt.total_seconds()/60
+            # For all activities see if length of time_diff>5 then mark trackpoint as invalid
+            date_points_df['invalid'] = False
+            date_points_df.loc[date_points_df.time_diff > 5, 'invalid'] = True
+
+            for user_id in df.user_id.unique():
+                # Calculate invalid activities.
+                # Group by activity id and sum the invalid trackpoints.
+                invalid_activities = date_points_df[date_points_df.user_id == user_id].groupby('id')['invalid'].sum()
+                invalid_activities[invalid_activities > 1] = 1  # We want to count per activity basis
+
+                # Total activities with invalid trackpoints.
+                invalid_df.loc[invalid_df.user_id == user_id, 'invalid_activities'] = invalid_activities.sum()
+
+            invalid_df = invalid_df[invalid_df.invalid_activities > 0]
+            return invalid_df
+
 
 def main():
     
@@ -178,12 +206,22 @@ def main():
             #track_points = pd.DataFrame(track_points, columns=columns)
             #print(program.odometer(track_points))
 
-            print("\nTask 2.8:")
-            print("Top 20 users who have gained the most altitude:\n")
-            track_points, columns = program.fetch_data_with_columns(all_queries.task8, print_results=False)
-            track_points = pd.DataFrame(track_points, columns=columns)
-            altitude_df = program.altitude_odometer(track_points)
-            print(altitude_df.nlargest(20, 'altitude_gained'))
+            #print("\nTask 2.8:")
+            #print("Top 20 users who have gained the most altitude:\n")
+            #track_points, columns = program.fetch_data_with_columns(all_queries.task8, print_results=False)
+            #track_points = pd.DataFrame(track_points, columns=columns)
+            #altitude_df = program.altitude_odometer(track_points)
+            #print(altitude_df.nlargest(20, 'altitude_gained'))
+
+            print("\nTask 2.9:")
+            print("Invalid activities per user:\n")
+            date_points, columns = program.fetch_data_with_columns(all_queries.task9, print_results=False)
+            date_points = pd.DataFrame(date_points, columns=columns)
+            invalid_df = program.invalid_activities(date_points)
+            pd.set_option('display.max_rows', None)
+            print(invalid_df)
+
+
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
