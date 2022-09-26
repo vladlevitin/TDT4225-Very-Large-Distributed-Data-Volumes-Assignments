@@ -66,7 +66,7 @@ class SQLQueries:
         # Probably a lot of dirty data due to flying planes? Can speed be checked somehow?
         self.task8 = """SELECT a.user_id, a.id, t.altitude, t.date_time
         FROM Activity a 
-        INNER JOIN TrackPoint t ON t.activity_id = a.id HAVING t.altitude > 0 AND t.altitude < 8848 LIMIT 3500000;"""
+        INNER JOIN TrackPoint t ON t.activity_id = a.id HAVING t.altitude > 0 AND t.altitude < 8848;"""
 
 
 class Program:
@@ -117,31 +117,20 @@ class Program:
         # Calculates the total distance traveled from multiple lat long points
         def altitude_odometer(self, df):
             user_altitude_dict = {}
-            print("ALT ODOMETER STARTS ROLLING")
-            # TODO Group by activity and then shift and drop etc.. Can this be done?
+            print("Calculating altitude gained")
+            altitude_df = pd.DataFrame(columns=['user_id', 'altitude_gained'])
+            altitude_df.user_id = df.user_id.unique()
+            altitude_df['altitude_gained'] = altitude_df['altitude_gained'].astype('float')
+            meter_in_feet = 0.3048
+            # -777 means not valid and should not be counted
+            df[df.altitude == -777] = np.NaN
+
             # Iterate through user IDs
             for user_id in df.user_id.unique():
-                distance = 0    # Reset for every user
-
-                activity_df = df[(df.user_id == user_id)].copy()  # Slice/index the array and copy
-
-                # Iterate through activity IDs
-                for idx in df.id.unique():
-
-                    #Insert end coordinates
-                    activity_df.loc[(df.id == idx), 'altitude_next'] = activity_df.loc[(df.id == idx), 'altitude'].shift(-1)
-
-                    # Remove last record (has no end)
-                    activity_df.drop(activity_df.tail(1).index, inplace=True)
-
-                    # Calculate altitude change on adjacent entries
-                    distance += np.abs(activity_df.loc[(df.id == idx), 'altitude'] - activity_df.loc[(df.id == idx), 'altitude_next']).sum()
-
-
-                user_altitude_dict[user_id] = distance
-                print("User: "+str(user_id))
-                print(user_altitude_dict[user_id])
-            return user_altitude_dict
+                # Groups by the activity id, then calculates the differences in altitude between adjacent rows with diff
+                # Then removes negative values and sums
+                altitude_df.loc[altitude_df.user_id == user_id, 'altitude_gained'] = df[(df.user_id == user_id)].groupby('id')['altitude'].diff().clip(lower=0).sum() * 0.3048
+            return altitude_df
 
     
 
@@ -193,7 +182,8 @@ def main():
             print("Top 20 users who have gained the most altitude:\n")
             track_points, columns = program.fetch_data_with_columns(all_queries.task8, print_results=False)
             track_points = pd.DataFrame(track_points, columns=columns)
-            (program.altitude_odometer(track_points))
+            altitude_df = program.altitude_odometer(track_points)
+            print(altitude_df.nlargest(20, 'altitude_gained'))
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
