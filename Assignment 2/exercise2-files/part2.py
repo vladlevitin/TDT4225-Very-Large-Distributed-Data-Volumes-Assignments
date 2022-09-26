@@ -73,6 +73,16 @@ class SQLQueries:
         # Find users who have invalid activities, and the number of invalid activities per user
         self.task9 = """SELECT a.user_id, a.id, t.date_time FROM TrackPoint t
         INNER JOIN Activity a ON a.id = t.activity_id"""
+        
+        # Find the users who have tracked an activity in the Forbidden City of Beijing. 
+        # In this question you can consider the Forbidden City to have coordinates that correspond to: lat 39.916xxx, lon 116.397xxx. Here xxx is any number.
+        
+        self.task10 = """SELECT a.user_id, t.lat, t.lon FROM Activity a Inner JOIN TrackPoint t ON t.activity_id = a.id
+        WHERE t.lat BETWEEN 39.916000 AND 39.916999 AND t.lon BETWEEN 116.397000 AND 116.397999;"""
+
+        #   ON a.id = t.activity_id 
+        # HAVING t.lat = 39.916 AND t.lon = 116.397;
+
 
         # Find all users who have registered transportation_mode and their most used
         # transportation_mode.
@@ -167,6 +177,10 @@ class Program:
             invalid_df = invalid_df[invalid_df.invalid_activities > 0]
             return invalid_df
 
+        # Find the users who have tracked an activity in the Forbidden City of Beijing. 
+        # In this question you can consider the Forbidden City to have coordinates that correspond to: lat 39.916, lon 116.397.
+            
+        
         def most_used_transportation(self, df):
             most_used = df.groupby('user_id')['transportation_mode'].agg(Most_used_transportation=pd.Series.mode)
             for user_id in most_used.index.unique():
@@ -236,14 +250,17 @@ def main():
             #invalid_df = program.invalid_activities(date_points)
             #pd.set_option('display.max_rows', None)
             #print(invalid_df)
-
-            print("\nTask 2.11:")
-            print("Find the most used transportation mode for all users:")
-            trans_modes, columns = program.fetch_data_with_columns(all_queries.task11, print_results=False)
-            trans_modes = pd.DataFrame(trans_modes, columns=columns)
-            print(program.most_used_transportation(trans_modes))
-
-
+            
+            print("\nTask 2.10:")
+            print("Users who have tracked an activity in the Forbidden City of Beijing:\n")
+            program.fetch_data(all_queries.task10)
+            
+            
+            # print("\nTask 2.11:")
+            # print("Most used transportation mode for all users:")
+            # trans_modes, columns = program.fetch_data_with_columns(all_queries.task11, print_results=False)
+            # trans_modes = pd.DataFrame(trans_modes, columns=columns)
+            # print(program.most_used_transportation(trans_modes))
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)

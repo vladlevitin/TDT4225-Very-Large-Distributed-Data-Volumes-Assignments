@@ -25,7 +25,19 @@ class Program:
         
         self.db_connection.commit()
 
-    def fetch_data(self, table_name):
+    def fetch_data(self, table_name, limit = None):
+        
+        if limit:
+            query = "SELECT * FROM %s"
+            self.cursor.execute(query % table_name + " LIMIT " + str(limit))
+            rows = self.cursor.fetchall()
+            print("Data from table %s, raw format:" % table_name)
+            print(rows)
+            # Using tabulate to show the table in a nice way
+            print("Data from table %s, tabulated:" % table_name)
+            print(tabulate(rows, headers=self.cursor.column_names))
+            return rows
+        
         query = "SELECT * FROM %s"
         self.cursor.execute(query % table_name)
         rows = self.cursor.fetchall()
@@ -89,7 +101,7 @@ def main():
         
         program.create_table(table_name="TrackPoint", query=track_point_query)
         
-        program.show_tables()
+        program.fetch_data(table_name="TrackPoint", limit=10)
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
