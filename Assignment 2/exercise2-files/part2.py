@@ -140,7 +140,7 @@ class Program:
 
         # Calculates the total distance traveled from multiple lat long points
         def altitude_odometer(self, df):
-            print("Calculating altitude gained")
+            
             altitude_df = pd.DataFrame(columns=['user_id', 'altitude_gained'])
             altitude_df.user_id = df.user_id.unique()
             altitude_df['altitude_gained'] = altitude_df['altitude_gained'].astype('float')
@@ -153,10 +153,11 @@ class Program:
                 # Groups by the activity id, then calculates the differences in altitude between adjacent rows with diff
                 # Then removes negative values and sums
                 altitude_df.loc[altitude_df.user_id == user_id, 'altitude_gained'] = df[(df.user_id == user_id)].groupby('id')['altitude'].diff().clip(lower=0).sum() * meter_in_feet
+            
+            altitude_df.set_index('user_id', inplace=True)
             return altitude_df
 
         def invalid_activities(self, df):
-            print("Calculating invalid activities")
             invalid_df = pd.DataFrame(columns=['user_id', 'invalid_activities'])
 
             date_points_df = df.copy()
@@ -178,6 +179,7 @@ class Program:
                 invalid_df.loc[invalid_df.user_id == user_id, 'invalid_activities'] = invalid_activities.sum()
 
             invalid_df = invalid_df[invalid_df.invalid_activities > 0]
+            invalid_df.set_index('user_id', inplace=True)
             return invalid_df
 
         # Find the users who have tracked an activity in the Forbidden City of Beijing. 
@@ -191,7 +193,7 @@ class Program:
                 if type(most_used.loc[most_used.index == user_id, 'Most_used_transportation'][0]) != np.dtype('str'):
                     # Pick randomly from arrays with multiple favourite transportation modes.
                     most_used.loc[most_used.index == user_id, 'Most_used_transportation'] = np.random.choice(most_used.loc[most_used.index == user_id, 'Most_used_transportation'][0])
-
+            
             return most_used
 
 
@@ -242,7 +244,7 @@ def main():
             print("\nTask 2.7:")
             print("Total distance walked in 2008 by user with id=112:\n")
             track_points, columns = program.fetch_data_with_columns(all_queries.task7, print_results=False)
-            track_points = pd.DataFrame(track_points, columns=columns)
+            track_points = pd.DataFrame(track_points, columns=columns).set_index('id')
             print(program.odometer(track_points))
 
             print("\nTask 2.8:")
