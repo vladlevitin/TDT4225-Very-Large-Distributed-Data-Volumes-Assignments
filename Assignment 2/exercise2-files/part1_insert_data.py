@@ -102,7 +102,7 @@ def insert_data():
                 
                 activity_id += 1
                 
-                all_user_trackpoints.append(activity_trackpoints[['activity_id','lat','lon','altitude','date_days','date_time']])
+                all_user_trackpoints.append(activity_trackpoints[['activity_id','lat','lont','altitude','date_days','date_time']])
         
         user_activities = pd.DataFrame(activities, columns=['id','user_id','transportation_mode','start_date_time','end_date_time'])
        

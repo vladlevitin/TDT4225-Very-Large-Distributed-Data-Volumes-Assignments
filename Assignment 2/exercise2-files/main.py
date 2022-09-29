@@ -1,4 +1,3 @@
-
 import part1_create_tables
 import part1_insert_data
 import part2

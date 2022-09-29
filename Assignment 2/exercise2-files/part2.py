@@ -4,10 +4,7 @@ from tabulate import tabulate
 
 import pandas as pd
 from haversine import haversine
-import part1_create_tables
-import part1_insert_data
 import numpy as np
-import time
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
