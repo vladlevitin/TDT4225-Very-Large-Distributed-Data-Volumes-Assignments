@@ -67,11 +67,13 @@ class SQLQueries:
                                 """
 
         # Top 20 users that has gained the most altitude
-        # Altitude cannot be higher than Mount Everest 8848 moh
-        # Probably a lot of dirty data due to flying planes? Can speed be checked somehow?
+        # -777 are invalid altitudes
+        # The lowest tunnel in china is 6377 feet under sea level (Daxiagu Tunnel). Readings below this is assumed to be invalid.
+        # The highest altitude planes can fly is 45 000 feet. The highest a military plane can fly is 50 000 feet
+        # in order to not starve the engines of oxygen. Hence we assume over 50 000 feet is invalid altitudes.
         self.task8 = """SELECT a.user_id, a.id, t.altitude, t.date_time
         FROM Activity a 
-        INNER JOIN TrackPoint t ON t.activity_id = a.id HAVING t.altitude > 0 AND t.altitude < 8848;"""
+        INNER JOIN TrackPoint t ON t.activity_id = a.id WHERE t.altitude != -777 AND t.altitude > -6377 AND t.altitude < 50000;"""
 
         # Find users who have invalid activities, and the number of invalid activities per user
         self.task9 = """SELECT a.user_id, a.id, t.date_time FROM TrackPoint t
@@ -91,8 +93,7 @@ class SQLQueries:
         # transportation_mode.
         # Do not count rows where mode is null
         self.task11 = """SELECT user_id, transportation_mode FROM Activity WHERE transportation_mode IS NOT NULL;"""
-        self.task11alt = """SELECT user_id, transportation_mode, COUNT(*) FROM Activity GROUP BY user_id WHERE transportation_mode IS NOT NULL HAVING COUNT(*) >= ALL (SELECT COUNT(*) FROM Activity GROUP BY user_id);"""
-        
+
 class Program:
         def __init__(self):
             self.connection = DbConnector()
@@ -207,32 +208,30 @@ def main():
             for table_name, query in all_queries.part1.items():
                 print(f"Table: {table_name}\n")
                 program.fetch_data(query, table_name)
-            
-            
+
+
             print("\nTask 2.1:\n")
             for table_name, query in all_queries.task1.items():
                 print(f"Table: {table_name}\n")
                 program.fetch_data(query, table_name)
-                
 
             print("\nTask 2.2:")
             print("Average number of activties per user:\n")
             program.cursor.execute(all_queries.task2_init)
             program.fetch_data(all_queries.task2)
-            
-    
+
             print("\nTask 2.3:")
             print("Top 20 users with most activities:\n")
             program.fetch_data(all_queries.task3)
-            
+
             print("\nTask 2.4:")
             print("Users who have taken a taxi:\n")
             program.fetch_data(all_queries.task4)
-            
+
             print("\nTask 2.5:")
             print("Types of transportation modes and their activities count:\n")
             program.fetch_data(all_queries.task5)
-            
+
             print("\nTask 2.6a:")
             print("The year with the most activities:\n")
             program.fetch_data(all_queries.task6a)
@@ -261,11 +260,11 @@ def main():
             invalid_df = program.invalid_activities(date_points)
             pd.set_option('display.max_rows', None)
             print(invalid_df)
-            
+
             print("\nTask 2.10:")
             print("Users who have tracked an activity in the Forbidden City of Beijing:\n")
             program.fetch_data(all_queries.task10)
-            
+
             print("\nTask 2.11:")
             print("Most used transportation mode for all users:")
             trans_modes, columns = program.fetch_data_with_columns(all_queries.task11, print_results=False)
