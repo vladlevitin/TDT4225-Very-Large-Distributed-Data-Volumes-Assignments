@@ -65,10 +65,6 @@ def main():
     try:
         
         program = Program()
-        
-        #program.drop_table(table_name="User")
-        #program.drop_table(table_name="Activity")
-        #program.drop_table(table_name="TrackPoint")
       
         user_query = """CREATE TABLE IF NOT EXISTS %s (
                     id VARCHAR(30) NOT NULL PRIMARY KEY,
