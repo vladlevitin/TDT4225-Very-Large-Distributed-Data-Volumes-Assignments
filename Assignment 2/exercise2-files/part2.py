@@ -85,9 +85,6 @@ class SQLQueries:
         self.task10 = """SELECT a.user_id, t.lat, t.lon FROM Activity a Inner JOIN TrackPoint t ON t.activity_id = a.id
         WHERE t.lat BETWEEN 39.916000 AND 39.916999 AND t.lon BETWEEN 116.397000 AND 116.397999;"""
 
-        #   ON a.id = t.activity_id 
-        # HAVING t.lat = 39.916 AND t.lon = 116.397;
-
 
         # Find all users who have registered transportation_mode and their most used
         # transportation_mode.
