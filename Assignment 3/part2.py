@@ -211,14 +211,14 @@ class Part2Program:
         df = df.rename(columns={"_id": "id"})
         df = df.join(pd.json_normalize(df.TrackPoints))
         df = df.drop(columns=["TrackPoints"])
-        print(self.tools.odometer(df))
+        print(round(self.tools.odometer(df), 2))
 
     def part_8(self):
         """
         Find the top 20 users who have gained the most altitude meters
         """
         track_points = self.db.activity.aggregate([
-            {"$project": {"user_id": 1, "year": {"$year": "$start_date_time"}, "transportation_mode": 1, "TrackPoints": 1}},
+            {"$project": {"user_id": 1, "TrackPoints": 1}},
             {"$unwind": {"path": "$TrackPoints"}},
             {"$match": {
                "altitude": {"$ne": -777},
@@ -238,10 +238,6 @@ class Part2Program:
         Find all users who have tracked an activity in the Forbidden City of Beijing.
         """
 
-        self.task10 = """SELECT a.user_id, t.lat, t.lon FROM Activity a Inner JOIN TrackPoint t ON t.activity_id = a.id
-        WHERE t.lat BETWEEN 39.916000 AND 39.916999 AND t.lon BETWEEN 116.397000 AND 116.397999;"""
-
-
         track_points = self.db.activity.aggregate([
             {"$project": {"user_id": 1, "year": {"$year": "$start_date_time"}, "transportation_mode": 1, "TrackPoints": 1}},
             {"$unwind": {"path": "$TrackPoints"}},
@@ -254,17 +250,9 @@ class Part2Program:
             {"$group": {
                 "_id": "$user_id"
             }}
-
         ])
         self.show_result(track_points)
 
-        # Cleaning from JSON format to DataFrame
-        #df = pd.DataFrame(list(track_points))
-        #df = df.rename(columns={"_id": "id"})
-        #df = df.join(pd.json_normalize(df.TrackPoints))
-        #df = df.drop(columns=["TrackPoints"])
-        #altitude_df = self.tools.altitude_odometer(df)
-        #print(altitude_df.nlargest(20, 'altitude_gained'))
 
     def part_11(self):
         """
@@ -304,41 +292,45 @@ def main():
     try:
         program = Part2Program()
 
-        # print("Part 2.1:", sep="\n")
-        # print("Total amount of users, activities and trackpoints in the dataset")
-        # program.part_1()
+        #print("Part 2.1:", sep="\n")
+        #print("Total amount of users, activities and trackpoints in the dataset")
+        #program.part_1()
 
-        # print("\nPart 2.2:", sep="\n")
-        # print("Find the average number of activities per user")
-        # program.part_2()
+        #print("\nPart 2.2:", sep="\n")
+        #print("Find the average number of activities per user")
+        #program.part_2()
 
-        # print("\nPart 2.3:", sep="\n")
-        # print("Find top 20 users with the highest number of activities")
-        # program.part_3()
+        #print("\nPart 2.3:", sep="\n")
+        #print("Find top 20 users with the highest number of activities")
+        #program.part_3()
 
-        # print("\nPart 2.4:", sep="\n")
-        # print("Find all users who have taken a taxi")
-        # program.part_4()
+        #print("\nPart 2.4:", sep="\n")
+        #print("Find all users who have taken a taxi")
+        #program.part_4()
 
-        # print("\nPart 2.5:", sep="\n")
-        # print("Find activities per transportation mode")
-        # program.part_5()
+        #print("\nPart 2.5:", sep="\n")
+        #print("Find activities per transportation mode")
+        #program.part_5()
 
         #print("\nPart 2.6a:", sep="\n")
         #print("Find the year with the most activities")
         #program.part_6a()
 
-        #print("\nPart 2.7:", sep="\n")
+        #print("\nPart 2.6b:", sep="\n")
         #print("Find the year with the most recorded hours")
+        #program.part_6b()
+
+        #print("\nPart 2.7:", sep="\n")
+        #print("Find the total distance (in km) walked in 2008 by user 112")
         #program.part_7()
 
         #print("\nPart 2.8:", sep="\n")
         #print("The the top 20 users who gained the most altitude meters")
         #program.part_8()
 
-        print("\nPart 2.10:", sep="\n")
-        print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
-        program.part_10()
+        #print("\nPart 2.10:", sep="\n")
+        #print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
+        #program.part_10()
 
         #print("\nPart 2.11:", sep="\n")
         #print("Find all users who have registered transportation mode and their most used transportation mode")
