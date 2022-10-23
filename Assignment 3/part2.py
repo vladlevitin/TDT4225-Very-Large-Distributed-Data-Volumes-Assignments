@@ -260,8 +260,6 @@ class Part2Program:
         altitude_df = self.tools.altitude_odometer(df)
         print(altitude_df.nlargest(20, 'altitude_gained'))
 
-    # Find all users who have invalid activities, and the number of  invalid activities per user an invalid activity is deﬁned as an activity with consecutive
-    # trackpoints where the timestamps deviate with at least 5 minutes.
 
     def part_9(self):
         """
