@@ -221,8 +221,7 @@ class Part2Program:
 
     def part_7(self):
         """
-        Find the year with the most recorded hours.
-        Projects the year to query based on it
+        Find the total distance in km walked in 2008 by user with id 112
         """
         track_points = self.db.activity.aggregate([
             {"$project": {"user_id": 1, "year": {"$year": "$start_date_time"}, "transportation_mode": 1, "TrackPoints": 1}},
