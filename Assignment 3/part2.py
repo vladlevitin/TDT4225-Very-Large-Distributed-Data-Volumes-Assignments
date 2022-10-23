@@ -233,6 +233,38 @@ class Part2Program:
         altitude_df = self.tools.altitude_odometer(df)
         print(altitude_df.nlargest(20, 'altitude_gained'))
 
+    def part_11(self):
+        """
+        Find all the users who have registered a transportation mode and their most used transportation mode.
+        Fetched user_ids and transportation mode, then grouped by both user_id and transportation and counted the
+        amount of times the users had used the respective modes. Then by sorting based on count, the list can be
+        grouped again based on user_id and select the first entry in the list (being the one with the highest count).
+        """
+        track_points = self.db.activity.aggregate([
+            {"$project": {"user_id": 1, "transportation_mode": 1}},
+            {"$match": {
+               "transportation_mode": {"$ne": None},
+            }},
+            {"$group": {"_id": {"user_id":"$user_id", "transportation_mode": "$transportation_mode"}, "count": {"$sum":1}}},
+            {"$sort": {"_id.user_id": 1, "count":-1}},
+            {"$group": {
+                "_id": {
+                    "user_id": "$_id.user_id"
+                },
+                "most_popular_mode": {
+                    "$first": "$_id.transportation_mode"
+                },
+                "Count": {
+                    "$first": "$count"
+                }
+
+            }},
+            {"$project": {"user_id": "$_id.user_id", "most_used_transportation_mode": "$most_popular_mode", "_id": 0}},
+            {"$sort": {"user_id": 1}},
+        ])
+
+        self.show_result(track_points)
+
 
 def main():
     program = None
@@ -267,9 +299,13 @@ def main():
         #print("Find the year with the most recorded hours")
         #program.part_7()
 
-        print("\nPart 2.8:", sep="\n")
-        print("The the top 20 users who gained the most altitude meters")
-        program.part_8()
+        #print("\nPart 2.8:", sep="\n")
+        #print("The the top 20 users who gained the most altitude meters")
+        #program.part_8()
+
+        print("\nPart 2.11:", sep="\n")
+        print("Find all users who have registered transportation mode and their most used transportation mode")
+        program.part_11()
 
 
     except Exception as e:
