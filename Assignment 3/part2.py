@@ -6,6 +6,7 @@ from haversine import haversine
 import part1
 from dateutil import parser
 import isodate
+import numpy as np
 
 class Tools:
 
@@ -32,6 +33,28 @@ class Tools:
                 distance += haversine((row.lat, row.lon), (row.lat_end, row.lon_end), unit="km")
 
         return distance
+
+    # Calculates the total distance traveled from multiple lat long points
+    def altitude_odometer(self, df):
+        print("Starting calculation")
+        altitude_df = pd.DataFrame(columns=['user_id', 'altitude_gained'])
+        altitude_df.user_id = df.user_id.unique()
+        altitude_df['altitude_gained'] = altitude_df['altitude_gained'].astype('float')
+        meter_in_feet = 0.3048
+
+        # MongoDB would not return any documents when using $match and $gt for some reason
+        df = df[df.altitude > -6377]  # Lowest point in China
+        df = df[df.altitude < 50000]  # Highest altitude planes can fly
+
+        # Iterate through user IDs
+        for user_id in df.user_id.unique():
+            # Groups by the activity id, then calculates the differences in altitude between adjacent rows with diff
+            # Then removes negative values and sums
+            altitude_df.loc[altitude_df.user_id == user_id, 'altitude_gained'] = \
+            df[(df.user_id == user_id)].groupby('id')['altitude'].diff().clip(lower=0).sum() * meter_in_feet
+
+        altitude_df.set_index('user_id', inplace=True)
+        return altitude_df
 
 
 class Part2Program:
@@ -190,6 +213,26 @@ class Part2Program:
         df = df.drop(columns=["TrackPoints"])
         print(self.tools.odometer(df))
 
+    def part_8(self):
+        """
+        Find the top 20 users who have gained the most altitude meters
+        """
+        track_points = self.db.activity.aggregate([
+            {"$project": {"user_id": 1, "year": {"$year": "$start_date_time"}, "transportation_mode": 1, "TrackPoints": 1}},
+            {"$unwind": {"path": "$TrackPoints"}},
+            {"$match": {
+               "altitude": {"$ne": -777},
+            }},
+        ])
+
+        # Cleaning from JSON format to DataFrame
+        df = pd.DataFrame(list(track_points))
+        df = df.rename(columns={"_id": "id"})
+        df = df.join(pd.json_normalize(df.TrackPoints))
+        df = df.drop(columns=["TrackPoints"])
+        altitude_df = self.tools.altitude_odometer(df)
+        print(altitude_df.nlargest(20, 'altitude_gained'))
+
 
 def main():
     program = None
@@ -220,9 +263,13 @@ def main():
         #print("Find the year with the most activities")
         #program.part_6a()
 
-        print("\nPart 2.7:", sep="\n")
-        print("Find the year with the most recorded hours")
-        program.part_7()
+        #print("\nPart 2.7:", sep="\n")
+        #print("Find the year with the most recorded hours")
+        #program.part_7()
+
+        print("\nPart 2.8:", sep="\n")
+        print("The the top 20 users who gained the most altitude meters")
+        program.part_8()
 
 
     except Exception as e:
