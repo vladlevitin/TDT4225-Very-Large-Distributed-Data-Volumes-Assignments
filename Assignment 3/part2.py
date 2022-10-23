@@ -232,6 +232,33 @@ class Part2Program:
         df = df.drop(columns=["TrackPoints"])
         altitude_df = self.tools.altitude_odometer(df)
         print(altitude_df.nlargest(20, 'altitude_gained'))
+        
+    # Find all users who have invalid activities, and the number of  invalid activities per user an invalid activity is deﬁned as an activity with consecutive 
+    # trackpoints where the timestamps deviate with at least 5 minutes.
+    
+    def part_9(self):
+        activities = self.db.activity.find(
+            {}, {"start_date_time": 0, "end_date_time": 0})
+        invalid_activities = {u: 0 for u in range(182)}
+        for activity in activities:
+            user_id = int(activity["user_id"])
+            difference = 0
+            previous = activity["TrackPoints"][0]["date_time"]
+            for trackpoint in activity["TrackPoints"][1:]:
+                current = trackpoint["date_time"]
+                difference = current-previous
+                if difference.total_seconds() >= 5*60:
+                    invalid_activities[user_id] += 1
+                    break
+                previous = current
+        
+        result = [{"user_id":str(item[0]).zfill(3), "invalid_activities": item[1]} 
+            for item  in invalid_activities.items()]
+
+        breaker = 0
+        for doc in result:
+            print(doc, end=", " if breaker%2==0 else ",\n")
+            breaker+=1
 
     def part_10(self):
         """
@@ -335,10 +362,14 @@ def main():
         #print("\nPart 2.8:", sep="\n")
         #print("The the top 20 users who gained the most altitude meters")
         #program.part_8()
+        
+        print("\nPart 2.9:", sep="\n")
+        print("Find all users who have invalid activities, and the number of invalid activities per user")
+        program.part_9()
 
-        print("\nPart 2.10:", sep="\n")
-        print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
-        program.part_10()
+        # print("\nPart 2.10:", sep="\n")
+        # print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
+        # program.part_10()
 
         #print("\nPart 2.11:", sep="\n")
         #print("Find all users who have registered transportation mode and their most used transportation mode")
