@@ -7,6 +7,8 @@ import part1
 from dateutil import parser
 import isodate
 import numpy as np
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
 class Tools:
 
@@ -56,6 +58,31 @@ class Tools:
         altitude_df.set_index('user_id', inplace=True)
         return altitude_df
 
+    def invalid_activities(self, df):
+        print("Starting Calculation")
+        invalid_df = pd.DataFrame(columns=['user_id', 'invalid_activities'])
+
+        date_points_df = df.copy()
+        invalid_df.user_id = df.user_id.unique()
+
+        # For all trackpoints, find time_diff between adjacent within a activity
+        date_points_df['time_diff'] = df.groupby('id')['date_time'].diff().dt.total_seconds() / 60
+        # For all activities see if length of time_diff>5 then mark trackpoint as invalid
+        date_points_df['invalid'] = False
+        date_points_df.loc[date_points_df.time_diff > 5, 'invalid'] = True
+
+        for user_id in df.user_id.unique():
+            # Calculate invalid activities.
+            # Group by activity id and sum the invalid trackpoints.
+            invalid_activities = date_points_df[date_points_df.user_id == user_id].groupby('id')['invalid'].sum()
+            invalid_activities[invalid_activities > 1] = 1  # We want to count per activity basis
+
+            # Total activities with invalid trackpoints.
+            invalid_df.loc[invalid_df.user_id == user_id, 'invalid_activities'] = invalid_activities.sum()
+
+        invalid_df = invalid_df[invalid_df.invalid_activities > 0]
+        invalid_df.set_index('user_id', inplace=True)
+        return invalid_df
 
 class Part2Program:
 
@@ -237,28 +264,22 @@ class Part2Program:
     # trackpoints where the timestamps deviate with at least 5 minutes.
 
     def part_9(self):
-        activities = self.db.activity.find(
-            {}, {"start_date_time": 0, "end_date_time": 0})
-        invalid_activities = {u: 0 for u in range(182)}
-        for activity in activities:
-            user_id = int(activity["user_id"])
-            difference = 0
-            previous = activity["TrackPoints"][0]["date_time"]
-            for trackpoint in activity["TrackPoints"][1:]:
-                current = trackpoint["date_time"]
-                difference = current-previous
-                if difference.total_seconds() >= 5*60:
-                    invalid_activities[user_id] += 1
-                    break
-                previous = current
+        """
+        Find users who have invalid activities, and the number of invalid activities per user
+        """
+        track_points = self.db.activity.aggregate([
+            {"$project": {"user_id": 1, "TrackPoints": 1}},
+            {"$unwind": {"path": "$TrackPoints"}},
+            {"$project": {"user_id": "$user_id", "date_time": "$TrackPoints.date_time"}},
+        ])
 
-        result = [{"user_id":str(item[0]).zfill(3), "invalid_activities": item[1]}
-            for item  in invalid_activities.items()]
+        # Cleaning from JSON format to DataFrame
+        df = pd.DataFrame(list(track_points))
+        df = df.rename(columns={"_id": "id"})
+        invalid_df = self.tools.invalid_activities(df)
+        pd.set_option('display.max_rows', None)
+        print(invalid_df)
 
-        breaker = 0
-        for doc in result:
-            print(doc, end=", " if breaker%2==0 else ",\n")
-            breaker+=1
 
     def part_10(self):
         """
@@ -319,53 +340,53 @@ def main():
     try:
         program = Part2Program()
 
-        # print("Part 2.1:", sep="\n")
-        # print("Total amount of users, activities and trackpoints in the dataset")
-        # program.part_1()
+        print("Part 2.1:", sep="\n")
+        print("Total amount of users, activities and trackpoints in the dataset")
+        program.part_1()
 
-        # print("\nPart 2.2:", sep="\n")
-        # print("Find the average number of activities per user")
-        # program.part_2()
+        print("\nPart 2.2:", sep="\n")
+        print("Find the average number of activities per user")
+        program.part_2()
 
-        # print("\nPart 2.3:", sep="\n")
-        # print("Find top 20 users with the highest number of activities")
-        # program.part_3()
+        print("\nPart 2.3:", sep="\n")
+        print("Find top 20 users with the highest number of activities")
+        program.part_3()
 
-        # print("\nPart 2.4:", sep="\n")
-        # print("Find all users who have taken a taxi")
-        # program.part_4()
+        print("\nPart 2.4:", sep="\n")
+        print("Find all users who have taken a taxi")
+        program.part_4()
 
-        # print("\nPart 2.5:", sep="\n")
-        # print("Find activities per transportation mode")
-        # program.part_5()
+        print("\nPart 2.5:", sep="\n")
+        print("Find activities per transportation mode")
+        program.part_5()
 
-        #print("\nPart 2.6a:", sep="\n")
-        #print("Find the year with the most activities")
-        #program.part_6a()
+        print("\nPart 2.6a:", sep="\n")
+        print("Find the year with the most activities")
+        program.part_6a()
 
-        #print("\nPart 2.6b:", sep="\n")
-        #print("Find the year with the most recorded hours")
-        #program.part_6b()
+        print("\nPart 2.6b:", sep="\n")
+        print("Find the year with the most recorded hours")
+        program.part_6b()
 
-        #print("\nPart 2.7:", sep="\n")
-        #print("Find the total distance (in km) walked in 2008 by user 112")
-        #program.part_7()
+        print("\nPart 2.7:", sep="\n")
+        print("Find the total distance (in km) walked in 2008 by user 112")
+        program.part_7()
 
-        #print("\nPart 2.8:", sep="\n")
-        #print("The the top 20 users who gained the most altitude meters")
-        #program.part_8()
+        print("\nPart 2.8:", sep="\n")
+        print("The the top 20 users who gained the most altitude meters")
+        program.part_8()
 
         print("\nPart 2.9:", sep="\n")
         print("Find all users who have invalid activities, and the number of invalid activities per user")
         program.part_9()
 
-        #print("\nPart 2.10:", sep="\n")
-        #print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
-        #program.part_10()
+        print("\nPart 2.10:", sep="\n")
+        print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
+        program.part_10()
 
-        #print("\nPart 2.11:", sep="\n")
-        #print("Find all users who have registered transportation mode and their most used transportation mode")
-        #program.part_11()
+        print("\nPart 2.11:", sep="\n")
+        print("Find all users who have registered transportation mode and their most used transportation mode")
+        program.part_11()
 
 
     except Exception as e:
