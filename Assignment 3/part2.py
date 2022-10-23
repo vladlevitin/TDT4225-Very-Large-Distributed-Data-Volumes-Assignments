@@ -233,6 +233,39 @@ class Part2Program:
         altitude_df = self.tools.altitude_odometer(df)
         print(altitude_df.nlargest(20, 'altitude_gained'))
 
+    def part_10(self):
+        """
+        Find all users who have tracked an activity in the Forbidden City of Beijing.
+        """
+
+        self.task10 = """SELECT a.user_id, t.lat, t.lon FROM Activity a Inner JOIN TrackPoint t ON t.activity_id = a.id
+        WHERE t.lat BETWEEN 39.916000 AND 39.916999 AND t.lon BETWEEN 116.397000 AND 116.397999;"""
+
+
+        track_points = self.db.activity.aggregate([
+            {"$project": {"user_id": 1, "year": {"$year": "$start_date_time"}, "transportation_mode": 1, "TrackPoints": 1}},
+            {"$unwind": {"path": "$TrackPoints"}},
+            {"$match": {
+               "TrackPoints.lat": {"$gte": 39.916000, "$lte": 39.916999},
+               "TrackPoints.lon": {"$gte": 116.397000, "$lte": 116.397999}
+            }},
+            {"$sort": {"user_id": 1}},
+            {"$project": {"user_id": 1, "lat":"$TrackPoints.lat", "lon":"$TrackPoints.lon", "_id": 0}},
+            {"$group": {
+                "_id": "$user_id"
+            }}
+
+        ])
+        self.show_result(track_points)
+
+        # Cleaning from JSON format to DataFrame
+        #df = pd.DataFrame(list(track_points))
+        #df = df.rename(columns={"_id": "id"})
+        #df = df.join(pd.json_normalize(df.TrackPoints))
+        #df = df.drop(columns=["TrackPoints"])
+        #altitude_df = self.tools.altitude_odometer(df)
+        #print(altitude_df.nlargest(20, 'altitude_gained'))
+
     def part_11(self):
         """
         Find all the users who have registered a transportation mode and their most used transportation mode.
@@ -303,9 +336,13 @@ def main():
         #print("The the top 20 users who gained the most altitude meters")
         #program.part_8()
 
-        print("\nPart 2.11:", sep="\n")
-        print("Find all users who have registered transportation mode and their most used transportation mode")
-        program.part_11()
+        print("\nPart 2.10:", sep="\n")
+        print("Find all users who have tracked an activity in the Forbidden City of Beijing.")
+        program.part_10()
+
+        #print("\nPart 2.11:", sep="\n")
+        #print("Find all users who have registered transportation mode and their most used transportation mode")
+        #program.part_11()
 
 
     except Exception as e:
