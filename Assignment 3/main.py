@@ -63,6 +63,6 @@ if __name__ == '__main__':
     if( init == 'y'):
         insert_data()
     
-    program = None
+    main()
     
    
