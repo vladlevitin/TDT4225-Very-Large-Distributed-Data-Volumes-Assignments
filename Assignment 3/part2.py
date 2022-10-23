@@ -233,32 +233,43 @@ class Part2Program:
         altitude_df = self.tools.altitude_odometer(df)
         print(altitude_df.nlargest(20, 'altitude_gained'))
         
-    # Find all users who have invalid activities, and the number of  invalid activities per user an invalid activity is deﬁned as an activity with consecutive 
+    # Find all users who have invalid activities, and the number of  invalid activities per user. An invalid activity is deﬁned as an activity with consecutive 
     # trackpoints where the timestamps deviate with at least 5 minutes.
     
     def part_9(self):
-        activities = self.db.activity.find(
-            {}, {"start_date_time": 0, "end_date_time": 0})
-        invalid_activities = {u: 0 for u in range(182)}
-        for activity in activities:
-            user_id = int(activity["user_id"])
-            difference = 0
-            previous = activity["TrackPoints"][0]["date_time"]
-            for trackpoint in activity["TrackPoints"][1:]:
-                current = trackpoint["date_time"]
-                difference = current-previous
-                if difference.total_seconds() >= 5*60:
-                    invalid_activities[user_id] += 1
-                    break
-                previous = current
         
-        result = [{"user_id":str(item[0]).zfill(3), "invalid_activities": item[1]} 
-            for item  in invalid_activities.items()]
+        activities = self.db.activity.find({}, {"start_date_time": 0, "end_date_time": 0})
 
-        breaker = 0
-        for doc in result:
-            print(doc, end=", " if breaker%2==0 else ",\n")
-            breaker+=1
+        # Cleaning from JSON format to DataFrame
+        
+        df = pd.DataFrame(list(activities))
+        df = df.rename(columns={"_id": "id"})
+        df = df.join(pd.json_normalize(df.TrackPoints))
+        print(df)
+    
+    # def part_9(self):
+    #     activities = self.db.activity.find(
+    #         {}, {"start_date_time": 0, "end_date_time": 0})
+    #     invalid_activities = {u: 0 for u in range(182)}
+    #     for activity in activities:
+    #         user_id = int(activity["user_id"])
+    #         difference = 0
+    #         previous = activity["TrackPoints"][0]["date_time"]
+    #         for trackpoint in activity["TrackPoints"][1:]:
+    #             current = trackpoint["date_time"]
+    #             difference = current-previous
+    #             if difference.total_seconds() >= 5*60:
+    #                 invalid_activities[user_id] += 1
+    #                 break
+    #             previous = current
+        
+    #     result = [{"user_id":str(item[0]).zfill(3), "invalid_activities": item[1]} 
+    #         for item  in invalid_activities.items()]
+
+    #     breaker = 0
+    #     for doc in result:
+    #         print(doc, end=", " if breaker%2==0 else ",\n")
+    #         breaker+=1
 
     def part_10(self):
         """
