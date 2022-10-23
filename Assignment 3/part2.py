@@ -2,8 +2,11 @@ import datetime
 from pprint import pprint
 from DbConnector import DbConnector
 import pandas as pd
-import haversine
+# import haversine
 import part1
+from dateutil import parser
+import isodate
+
 
 class Part2Program:
 
@@ -19,12 +22,12 @@ class Part2Program:
     def get_one(self, query_result, col_name):
         for document in query_result:
             return document[col_name]
-    
+
     # Part 2.1
     #  How many users, activities and trackpoints are there in the dataset (after it is inserted into the database)
-    
+
     def part_1(self):
-        
+
         amount_users = self.db.user.count_documents({})
         amount_activities = self.db.activity.count_documents({})
 
@@ -47,7 +50,6 @@ class Part2Program:
 
         self.show_result(activity_average)
 
-
     def part_3(self):
         """
         Find the top 20 users with the most activities.
@@ -60,7 +62,6 @@ class Part2Program:
         ])
 
         self.show_result(most_activities)
-
 
     def part_4(self):
         """Find all users that have taken a taxi"""
@@ -106,11 +107,53 @@ class Part2Program:
         year_with_most_activities = self.db.activity.aggregate([
             {"$group":
                  {"_id":
-                    {"$toInt":
-                       {"$year": datetime.datetime("$start_date_time")}
-                    }
-                }
-             }
+                      {"$toInt":
+                           {"$year": "$start_date_time"}
+                       }
+                     ,
+                  "activities": {"$count": {}}
+                  }
+             },
+            {"$sort": {"activities": -1}},
+            {"$limit": 1}
+        ])
+        self.show_result(year_with_most_activities)
+
+    def part_6b(self):
+        """
+        Find the year with the most recorded hours.
+        """
+        year_with_most_activities = self.db.activity.aggregate([
+            {"$group":
+                 {"_id":
+                      {"$toInt":
+                           {"$year": "$start_date_time"}
+                       }
+                     ,
+                  "activities": {"$sum": {"$dateDiff": {
+                      "startDate": "$start_date_time",
+                      "endDate": "$end_date_time",
+                      "unit": "hour"
+                  }}}
+                  }
+             },
+            {"$sort": {"activities": -1}},
+            {"$limit": 1}
+        ])
+        self.show_result(year_with_most_activities)
+
+
+    def part_7(self):
+        """
+        Find the year with the most recorded hours.
+        Projects the year to query based on it
+        """
+        year_with_most_activities = self.db.activity.aggregate([
+            {"$project": {"TrackPoints": 1, "user_id": 1, "year": {"$year": "$start_date_time"}}},
+            {"$match": {
+                "$and": [
+                    {"user_id": {"$eq": "112"}}, {"year": {"$eq": 2008}},
+            ]}}
         ])
         self.show_result(year_with_most_activities)
 
@@ -120,29 +163,33 @@ def main():
     try:
         program = Part2Program()
 
-        #print("Part 2.1:", sep="\n")
-        #print("Total amount of users, activities and trackpoints in the dataset")
-        #program.part_1()
+        # print("Part 2.1:", sep="\n")
+        # print("Total amount of users, activities and trackpoints in the dataset")
+        # program.part_1()
 
-        #print("\nPart 2.2:", sep="\n")
-        #print("Find the average number of activities per user")
-        #program.part_2()
+        # print("\nPart 2.2:", sep="\n")
+        # print("Find the average number of activities per user")
+        # program.part_2()
 
-        #print("\nPart 2.3:", sep="\n")
-        #print("Find top 20 users with the highest number of activities")
-        #program.part_3()
+        # print("\nPart 2.3:", sep="\n")
+        # print("Find top 20 users with the highest number of activities")
+        # program.part_3()
 
-        #print("\nPart 2.4:", sep="\n")
-        #print("Find all users who have taken a taxi")
-        #program.part_4()
+        # print("\nPart 2.4:", sep="\n")
+        # print("Find all users who have taken a taxi")
+        # program.part_4()
 
-        #print("\nPart 2.5:", sep="\n")
-        #print("Find activities per transportation mode")
-        #program.part_5()
+        # print("\nPart 2.5:", sep="\n")
+        # print("Find activities per transportation mode")
+        # program.part_5()
 
-        print("\nPart 2.6a:", sep="\n")
-        print("Find the year with the most activities")
-        program.part_6a()
+        #print("\nPart 2.6a:", sep="\n")
+        #print("Find the year with the most activities")
+        #program.part_6a()
+
+        print("\nPart 2.7:", sep="\n")
+        print("Find the year with the most recorded hours")
+        program.part_7()
 
 
     except Exception as e:
