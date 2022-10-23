@@ -2,10 +2,36 @@ import datetime
 from pprint import pprint
 from DbConnector import DbConnector
 import pandas as pd
-# import haversine
+from haversine import haversine
 import part1
 from dateutil import parser
 import isodate
+
+class Tools:
+
+    def __init__(self):
+        pass
+
+    # Calculates the total distance traveled from multiple lat long points
+    def odometer(self, df):
+        distance = 0
+
+        # Iterate through activity IDs
+        for idx in df.id.unique():
+            activity_df = df[df.id == idx].copy()
+
+            # Insert end coordinates
+            activity_df['lat_end'] = activity_df['lat'].shift(-1)
+            activity_df['lon_end'] = activity_df['lon'].shift(-1)
+
+            # Remove last record (has no end)
+            activity_df.drop(activity_df.tail(1).index, inplace=True)
+
+            # Calculate distance and sum up for each row
+            for _, row in activity_df.iterrows():
+                distance += haversine((row.lat, row.lon), (row.lat_end, row.lon_end), unit="km")
+
+        return distance
 
 
 class Part2Program:
@@ -14,6 +40,7 @@ class Part2Program:
         self.connection = DbConnector()
         self.client = self.connection.client
         self.db = self.connection.db
+        self.tools = Tools()
 
     def show_result(self, query_result):
         for document in query_result:
@@ -27,7 +54,6 @@ class Part2Program:
     #  How many users, activities and trackpoints are there in the dataset (after it is inserted into the database)
 
     def part_1(self):
-
         amount_users = self.db.user.count_documents({})
         amount_activities = self.db.activity.count_documents({})
 
@@ -123,7 +149,7 @@ class Part2Program:
         """
         Find the year with the most recorded hours.
         """
-        year_with_most_activities = self.db.activity.aggregate([
+        year_with_most_hours = self.db.activity.aggregate([
             {"$group":
                  {"_id":
                       {"$toInt":
@@ -140,7 +166,7 @@ class Part2Program:
             {"$sort": {"activities": -1}},
             {"$limit": 1}
         ])
-        self.show_result(year_with_most_activities)
+        self.show_result(year_with_most_hours)
 
 
     def part_7(self):
@@ -148,14 +174,21 @@ class Part2Program:
         Find the year with the most recorded hours.
         Projects the year to query based on it
         """
-        year_with_most_activities = self.db.activity.aggregate([
-            {"$project": {"TrackPoints": 1, "user_id": 1, "year": {"$year": "$start_date_time"}}},
+        track_points = self.db.activity.aggregate([
+            {"$project": {"user_id": 1, "year": {"$year": "$start_date_time"}, "transportation_mode": 1, "TrackPoints": 1}},
+            {"$unwind": {"path": "$TrackPoints"}},
             {"$match": {
                 "$and": [
-                    {"user_id": {"$eq": "112"}}, {"year": {"$eq": 2008}},
-            ]}}
+                    {"user_id": {"$eq": "112"}}, {"year": {"$eq": 2008}}, {"transportation_mode": {"$eq": "walk"}},
+            ]}},
         ])
-        self.show_result(year_with_most_activities)
+
+        # Cleaning from JSON format to DataFrame
+        df = pd.DataFrame(list(track_points))
+        df = df.rename(columns={"_id": "id"})
+        df = df.join(pd.json_normalize(df.TrackPoints))
+        df = df.drop(columns=["TrackPoints"])
+        print(self.tools.odometer(df))
 
 
 def main():
